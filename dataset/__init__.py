@@ -1,33 +1,26 @@
-import idx2numpy
 import numpy as np
 
 from transform import Transform
 
 
 class Dataset(object):
-    def __init__(self, image_path: str, label_path: str, dataset_type: str, transforms: list[Transform]):
+    def __init__(self, data: np.ndarray, labels: np.ndarray, type: str, transforms: list[Transform]):
         """
-        :param image_path (string): путь до файла с изображениями
-        :param label_path (string): путь до файла с метками.
-        :param dataset_type (string): (['train', 'valid', 'test']).
-        :param transforms (list): список необходимых преобразований изображений.
+        :param data (np.ndarray): Данные
+        :param labels (np.ndarray): Метки классов
+        :param type (string): (['train', 'valid', 'test']).
+        :param transforms (list): Список необходимых преобразований изображений.
         """
-        self.image_path: str = image_path
-        self.label_path: str = label_path
-        self.dataset_type: str = dataset_type
         self.transforms: list = transforms
 
-    def read_data(self):
-        """
-        Считывание данных по заданному пути.
-        """
-        self.images = idx2numpy.convert_from_file(self.image_path)
-        self.labels = idx2numpy.convert_from_file(self.label_path)
+        self.data = data
+        self.labels = labels
+        self.type = type
         unique = np.unique(self.labels)
         self.nrof_classes = len(unique)
 
     def __len__(self) -> int:
-        return len(self.images)
+        return len(self.data)
 
     def one_hot_labels(self, label: int) -> np.ndarray[np.int32, np.dtype[np.int32]]:
         """
@@ -44,17 +37,17 @@ class Dataset(object):
         :param idx: индекс элемента в выборке
         :return: preprocessed image and label
         """
-        images = self.images[idx]
+        data = self.data[idx]
         labels = self.labels[idx]
         for transform in self.transforms:
-            images = transform(images)
-        return images, labels
+            data = transform(data)
+        return data, labels
 
-    def show_statistics(self):
+    def __str__(self):
         unique, counts = np.unique(self.labels, return_counts=True)
-        print(f"Количество элементов: {len(self.images)}")
-        print(f"Тип датасета: {self.dataset_type}")
-        print(f"Количество классов: {self.nrof_classes}")
-        print(f"Количество данных в каждом классе:")
+        out = f"""Количество элементов: {len(self.data)}
+        Тип датасета: {self.type}
+        Количество классов: {self.nrof_classes}
+        Количество данных в каждом классе:\n"""
         for k, v in dict(zip(unique, counts)).items():
-            print(f"\t{k}: {v}")
+            out += f"\t{k}: {v}\n"
